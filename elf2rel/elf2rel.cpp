@@ -3,7 +3,7 @@
 
 #include "elf2rel.h"
 
-#include <elfio/elfio.hpp>
+#include "elfio/elfio.hpp"
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
@@ -194,6 +194,7 @@ int main(int argc, char **argv)
 	std::string elfFilename;
 	std::string lstFilename;
 	std::string relFilename = "";
+	std::vector<std::string> mapFilenames;
 	int moduleID = 33;
 	int relVersion = 3;
 
@@ -204,7 +205,7 @@ int main(int argc, char **argv)
 		description.add_options()
 			("help", "Print help message")
 			("input-file,i", po::value(&elfFilename), "Input ELF filename (required)")
-			("symbol-file,s", po::value(&lstFilename), "Input symbol file name (required)")
+			("symbol-file,s", po::value<std::vector<std::string>>()->multitoken(), "Input symbol file(s) (required)")
 			("output-file,o", po::value(&relFilename), "Output REL filename")
 			("rel-id", po::value(&moduleID)->default_value(0x1000), "REL file ID")
 			("rel-version", po::value(&relVersion)->default_value(3), "REL file format version (1, 2, 3)");
@@ -224,13 +225,18 @@ int main(int argc, char **argv)
 
 		if (varMap.count("help")
 			|| varMap.count("input-file") != 1
-			|| varMap.count("symbol-file") != 1
+			|| varMap.count("symbol-file") < 1
 			|| relVersion < 1
 			|| relVersion > 3)
 		{
+			std::cout << "Copyright 2019 Linus S. (aka PistonMiner)\n";
+			std::cout << "Modified by SeekyCT to support linking against other rels\n";
+			std::cout << "Modifed 4.20.23 by Sammi Husky to support multiple map files" << "\n\n";
 			std::cout << description << "\n";
 			return 1;
 		}
+
+		mapFilenames = varMap["symbol-file"].as<std::vector<std::string>>();
 	}
 
 	if (relFilename == "")
@@ -245,8 +251,11 @@ int main(int argc, char **argv)
 		printf("Failed to load input file\n");
 		return 1;
 	}
-	
-	auto externalSymbolMap = loadSymbolMap(lstFilename);
+	std::map<std::string, SymbolLocation> externalSymbolMap;
+	for (auto path : mapFilenames) {
+		auto syms = loadSymbolMap(path);
+		externalSymbolMap.merge(syms);
+	}
 
 	// Find special sections
 	ELFIO::section *symSection = nullptr;
