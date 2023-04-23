@@ -12,7 +12,7 @@ Requirements:
  - Boost 1.79.0. 
    - Other versions may also work, but has not been tested.
  - C++17 features.
- - Visual Studio.
+ - Visual Studio or CMAKE
 
 Building:
  - Use the provided solution file to build the project. 
