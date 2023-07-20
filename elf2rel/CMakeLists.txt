@@ -7,4 +7,5 @@ target_include_directories( elf2rel PRIVATE
   ${CMAKE_CURRENT_LIST_DIR})
 
 find_package(Boost REQUIRED COMPONENTS program_options)
-target_link_libraries(elf2rel Boost::program_options )
+target_link_libraries(elf2rel Boost::program_options)
+target_compile_features(elf2rel PUBLIC cxx_std_17)
